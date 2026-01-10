@@ -1,5 +1,5 @@
 # Tooka
-Standalone Discord audio sending node, based off nodelink/lavalink
+Standalone Discord audio sending node, based off nodelink/lavalink. Focused on Bun support
 <p align="center">
 <img width="720" height="1080" alt="image" src="https://github.com/user-attachments/assets/0f915302-7e0d-4b8a-b407-f547358f2cdd" />
 </p>

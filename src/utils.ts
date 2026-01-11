@@ -1,4 +1,5 @@
 import pino, { type Logger as PinoLogger } from 'pino'
+import type { TrackInfo } from './types'
 
 type LogFn = (msg: string, obj?: Record<string, unknown>) => void
 
@@ -177,6 +178,22 @@ function decodeTrack(encoded: string) {
     details,
     pluginInfo: {},
     userData: {}
+  }
+}
+
+export function buildTrack(track: Partial<TrackInfo>): TrackInfo {
+  return {
+    title: track.title || '',
+    author: track.author || '',
+    length: Number(track.length || 0),
+    identifier: track.identifier || '',
+    isSeekable: typeof track.isSeekable === 'boolean' ? track.isSeekable : true,
+    isStream: Boolean(track.isStream),
+    uri: track.uri,
+    artworkUrl: track.artworkUrl,
+    isrc: track.isrc,
+    sourceName: track.sourceName || '',
+    position: Number(track.position || 0)
   }
 }
 

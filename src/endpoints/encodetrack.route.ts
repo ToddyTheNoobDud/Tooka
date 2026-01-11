@@ -45,7 +45,10 @@ export default function encodeTrackRoute(ctx: Ctx): Route {
         }
 
         const encoded = encodeTrack(body.track)
-        return Response.json({ encoded }, { status: 200 })
+        return new Response(encoded, {
+          status: 200,
+          headers: { 'Content-Type': 'text/plain' }
+        })
       } catch (error) {
         ctx.logger?.error?.('Error encoding track', { error })
         return new Response('Internal Server Error', { status: 500 })

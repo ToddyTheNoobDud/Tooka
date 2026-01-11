@@ -2,10 +2,10 @@ import path from 'node:path'
 import { pathToFileURL } from 'node:url'
 import type { Ctx, Server, Handler, Route, RouteFactory } from '../types'
 
-function joinPaths(prefix: string, p: string) {
+const joinPaths = (prefix: string, p: string): string => {
   const a = prefix.endsWith('/') ? prefix.slice(0, -1) : prefix
   const b = p.startsWith('/') ? p : `/${p}`
-  return `${a}${b}`
+  return a + b
 }
 
 export class Router {
@@ -16,56 +16,52 @@ export class Router {
     private basePath = '/v4'
   ) {}
 
-  register(route: Route) {
+  register(route: Route): void {
     const method = route.method.toUpperCase()
 
     if (!route.path?.startsWith('/')) {
-      throw new Error(
-        `Route path must start with "/": ${route.method} ${route.path}`
-      )
+      throw new Error(`Route path must start with "/": ${method} ${route.path}`)
     }
 
-    if (
-      route.path === this.basePath ||
-      route.path.startsWith(this.basePath + '/')
-    ) {
-      throw new Error(
-        `Do not include "${this.basePath}" in route.path. Use "/info" not "${this.basePath}/info". Got: ${route.path}`
-      )
+    if (route.path === this.basePath || route.path.startsWith(this.basePath + '/')) {
+      throw new Error(`Do not include "${this.basePath}" in route.path. Use "/info" not "${this.basePath}/info". Got: ${route.path}`)
     }
 
     const fullPath = joinPaths(this.basePath, route.path)
     const key = `${method} ${fullPath}`
 
-    if (this.routes.has(key)) throw new Error(`Duplicate route: ${key}`)
+    if (this.routes.has(key)) {
+      throw new Error(`Duplicate route: ${key}`)
+    }
+
     this.routes.set(key, route.handler)
   }
 
-  async loadDir(dirAbs: string) {
+  async loadDir(dirAbs: string): Promise<void> {
     const glob = new Bun.Glob('**/*.route.{ts,js}')
+    const loadPromises: Promise<void>[] = []
 
     for await (const rel of glob.scan(dirAbs)) {
       const abs = path.join(dirAbs, rel)
-      const mod = await import(pathToFileURL(abs).href)
 
-      const factory: RouteFactory | undefined = mod.default
-      if (typeof factory !== 'function') {
-        throw new Error(
-          `Route file must default-export a function(ctx) => route: ${abs}`
-        )
-      }
+      loadPromises.push(
+        import(pathToFileURL(abs).href).then(async (mod) => {
+          const factory: RouteFactory | undefined = mod.default
+          if (typeof factory !== 'function') {
+            throw new Error(`Route file must default-export a function(ctx) => route: ${abs}`)
+          }
 
-      const route = await factory(this.ctx)
-      if (
-        !route?.method ||
-        !route?.path ||
-        typeof route.handler !== 'function'
-      ) {
-        throw new Error(`Invalid route returned by: ${abs}`)
-      }
+          const route = await factory(this.ctx)
+          if (!route?.method || !route?.path || typeof route.handler !== 'function') {
+            throw new Error(`Invalid route returned by: ${abs}`)
+          }
 
-      this.register(route)
+          this.register(route)
+        })
+      )
     }
+
+    await Promise.all(loadPromises)
   }
 
   fetch = async (req: Request, server: Server): Promise<Response> => {

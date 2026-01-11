@@ -1,30 +1,6 @@
 import path from 'node:path'
 import { pathToFileURL } from 'node:url'
-
-export type Ctx = {
-  tooka: any
-  logger: any
-  config: any
-}
-
-export type Server = {
-  upgrade(req: Request, opts?: any): boolean
-  requestIP(req: Request): { address?: string } | null
-}
-
-export type Handler = (
-  req: Request,
-  server: Server,
-  ctx: Ctx
-) => Response | Promise<Response>
-
-export type Route = {
-  method: string
-  path: string
-  handler: Handler
-}
-
-export type RouteFactory = (ctx: Ctx) => Route | Promise<Route>
+import type { Ctx, Server, Handler, Route, RouteFactory } from '../types'
 
 function joinPaths(prefix: string, p: string) {
   const a = prefix.endsWith('/') ? prefix.slice(0, -1) : prefix
@@ -97,9 +73,16 @@ export class Router {
     const key = `${req.method.toUpperCase()} ${url.pathname}`
 
     const handler = this.routes.get(key)
-    if (!handler) return new Response('Not Found', { status: 404 })
+    if (!handler) {
+      return new Response('Not Found', { status: 404 })
+    }
 
-    return handler(req, server, this.ctx)
+    try {
+      return await handler(req, server, this.ctx)
+    } catch (error) {
+      this.ctx.logger?.error?.('Route handler error', { error, key })
+      return new Response('Internal Server Error', { status: 500 })
+    }
   }
 }
 

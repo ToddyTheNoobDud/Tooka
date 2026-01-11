@@ -1,7 +1,7 @@
 import process from 'node:process'
 import Ajv from 'ajv'
-import type { Route } from '../managers/routerManager'
-import { getVersion } from '../utils.js'
+import type { Route, Ctx } from '../types'
+import { getVersion } from '../utils'
 
 const ajv = new Ajv({ allErrors: true })
 
@@ -87,7 +87,7 @@ function getPlugins(tooka: any) {
   }))
 }
 
-export default function infoRoute(ctx: any): Route {
+export default function infoRoute(ctx: Ctx): Route {
   return {
     method: 'GET',
     path: '/info',

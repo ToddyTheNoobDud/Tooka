@@ -5,21 +5,18 @@ import path from 'node:path'
 import { type ServerWebSocket } from 'bun'
 import { logger } from './utils'
 import { Router } from './managers/routerManager'
+import type { ConfigType, WSData, Session } from './types'
 
 if (!process.isBun) {
   logger.fatal('TOOKA is bun exclusive atm, please use bun')
   process.exit(1)
 }
 
-type ConfigType = {
-  server: { port: number; host: string; password: string }
-}
-
 const defaultConfig: ConfigType = {
   server: { port: 50166, host: '0.0.0.0', password: 'youshallnotpass' }
 }
 
-const loadConfig = async (): Promise<ConfigType> => {
+async function loadConfig(): Promise<ConfigType> {
   try {
     const module = await import(path.join(process.cwd(), 'config.ts'))
     return {
@@ -29,10 +26,10 @@ const loadConfig = async (): Promise<ConfigType> => {
       }
     }
   } catch (e: any) {
-    logger.error('Failed to load config', { err: e })
     return defaultConfig
   }
 }
+
 
 const config = await loadConfig()
 
@@ -44,25 +41,6 @@ const tooka = {
 
 const router = new Router({ tooka, logger, config })
 await router.loadDir(path.join(import.meta.dir, 'endpoints'))
-
-type WSData = {
-  id: string
-  ip?: string
-  userId: string
-  clientName: string
-  sessionId: string
-  resumed: boolean
-}
-
-type Session = {
-  sessionId: string
-  userId: string
-  clientName: string
-  resumeEnabled: boolean
-  resumeTimeoutMs: number
-  resumeDeadline?: number
-  ws?: ServerWebSocket<WSData>
-}
 
 class WebsocketHandler extends EventEmitter {
   private readonly config: ConfigType

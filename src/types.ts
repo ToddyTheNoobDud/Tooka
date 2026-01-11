@@ -68,7 +68,6 @@ export type EncodedTrack = {
   userData: Record<string, unknown>
 }
 
-
 const defaultConfig: ConfigType = {
   server: { port: 50166, host: '0.0.0.0', password: 'youshallnotpass' }
 }

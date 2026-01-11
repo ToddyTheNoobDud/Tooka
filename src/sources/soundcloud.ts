@@ -2,7 +2,10 @@ import { SourceManager, sourceManagerRegistry } from '../managers/sourceManager'
 import { encodeTrack, decodeTrack, buildTrack, logger } from '../utils'
 import { CredentialManager } from '../managers/credentialManager'
 import type { TrackInfo, EncodedTrack } from '../types'
-import type { SoundCloudTrack, SoundCloudSearchResponse } from './types/soundcloud.types'
+import type {
+  SoundCloudTrack,
+  SoundCloudSearchResponse
+} from './types/soundcloud.types'
 import {
   BASE_URL,
   SOUNDCLOUD_URL,
@@ -49,7 +52,10 @@ class SoundCloudSourceManager implements SourceManager {
         return clientId
       }
 
-      const assetUrls = Array.from(mainPage.matchAll(ASSET_PATTERN), m => m[0])
+      const assetUrls = Array.from(
+        mainPage.matchAll(ASSET_PATTERN),
+        (m) => m[0]
+      )
       if (assetUrls.length === 0) {
         logger.error('No SoundCloud asset URLs found')
         return null
@@ -142,7 +148,9 @@ class SoundCloudSourceManager implements SourceManager {
     const lower = identifier.toLowerCase()
 
     if (lower.startsWith(SEARCH_PREFIX_LOWER)) {
-      const query = decodeURIComponent(identifier.substring(this.searchPrefixLength))
+      const query = decodeURIComponent(
+        identifier.substring(this.searchPrefixLength)
+      )
       logger.info('SoundCloud search query', { query })
       return this.search(query)
     }

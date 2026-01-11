@@ -8,7 +8,9 @@ export default function decodeTrackRoute(ctx: Ctx): Route {
     handler: async (req: Request) => {
       try {
         const url = new URL(req.url)
-        const encoded = url.searchParams.get('encoded') || url.searchParams.get('encodedTrack')
+        const encoded =
+          url.searchParams.get('encoded') ||
+          url.searchParams.get('encodedTrack')
 
         if (!encoded) {
           return new Response('Missing encoded parameter', { status: 400 })

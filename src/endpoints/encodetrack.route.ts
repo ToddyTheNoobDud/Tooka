@@ -32,7 +32,9 @@ export default function encodeTrackRoute(ctx: Ctx): Route {
         try {
           track = JSON.parse(trackParam)
         } catch {
-          return new Response('Invalid JSON in track parameter', { status: 400 })
+          return new Response('Invalid JSON in track parameter', {
+            status: 400
+          })
         }
 
         const body = { track }

@@ -51,7 +51,6 @@ export function getVersion(mode: 'object' | 'string' = 'string') {
   return `${v.major}.${v.minor}.${v.patch}`
 }
 
-
 function decodeTrack(encoded: string) {
   if (!encoded) throw new Error('Decode Error: Input string is null or empty')
 
@@ -60,7 +59,9 @@ function decodeTrack(encoded: string) {
 
   const ensure = (n: number) => {
     if (position + n > buffer.length) {
-      throw new Error(`Unexpected end of buffer at position ${position}, need ${n} bytes`)
+      throw new Error(
+        `Unexpected end of buffer at position ${position}, need ${n} bytes`
+      )
     }
   }
 
@@ -250,7 +251,8 @@ function encodeTrack(track: any) {
 
   const detailsOut = Array.isArray(track.details) ? [...track.details] : []
 
-  const seekable = typeof track.isSeekable === 'boolean' ? track.isSeekable : !track.isStream
+  const seekable =
+    typeof track.isSeekable === 'boolean' ? track.isSeekable : !track.isStream
   if (seekable !== !track.isStream) {
     detailsOut.push(seekable ? '__seekable:1' : '__seekable:0')
   }
@@ -270,7 +272,4 @@ function encodeTrack(track: any) {
   return Buffer.concat([header, messageBody]).toString('base64')
 }
 
-export {
-  decodeTrack,
-  encodeTrack
-}
+export { decodeTrack, encodeTrack }

@@ -49,8 +49,10 @@ export interface SoundCloudResolveResponse {
 
 export const BASE_URL = 'https://api-v2.soundcloud.com'
 export const SOUNDCLOUD_URL = 'https://soundcloud.com'
-export const ASSET_PATTERN = /https:\/\/a-v2\.sndcdn\.com\/assets\/[a-zA-Z0-9-]+\.js/g
-export const CLIENT_ID_PATTERN = /(?:[?&/]?(?:client_id)[\s:=&]*"?|"data":{"id":")([A-Za-z0-9]{32})"?/
+export const ASSET_PATTERN =
+  /https:\/\/a-v2\.sndcdn\.com\/assets\/[a-zA-Z0-9-]+\.js/g
+export const CLIENT_ID_PATTERN =
+  /(?:[?&/]?(?:client_id)[\s:=&]*"?|"data":{"id":")([A-Za-z0-9]{32})"?/
 export const URL_REGEX = /^(?:https?:\/\/)?(?:www\.)?soundcloud\.com\/.+$/i
 export const SEARCH_PREFIX = 'scsearch:'
 export const SEARCH_PREFIX_LOWER = 'scsearch:'

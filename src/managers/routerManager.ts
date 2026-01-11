@@ -23,8 +23,13 @@ export class Router {
       throw new Error(`Route path must start with "/": ${method} ${route.path}`)
     }
 
-    if (route.path === this.basePath || route.path.startsWith(this.basePath + '/')) {
-      throw new Error(`Do not include "${this.basePath}" in route.path. Use "/info" not "${this.basePath}/info". Got: ${route.path}`)
+    if (
+      route.path === this.basePath ||
+      route.path.startsWith(this.basePath + '/')
+    ) {
+      throw new Error(
+        `Do not include "${this.basePath}" in route.path. Use "/info" not "${this.basePath}/info". Got: ${route.path}`
+      )
     }
 
     const fullPath = joinPaths(this.basePath, route.path)
@@ -48,11 +53,17 @@ export class Router {
         import(pathToFileURL(abs).href).then(async (mod) => {
           const factory: RouteFactory | undefined = mod.default
           if (typeof factory !== 'function') {
-            throw new Error(`Route file must default-export a function(ctx) => route: ${abs}`)
+            throw new Error(
+              `Route file must default-export a function(ctx) => route: ${abs}`
+            )
           }
 
           const route = await factory(this.ctx)
-          if (!route?.method || !route?.path || typeof route.handler !== 'function') {
+          if (
+            !route?.method ||
+            !route?.path ||
+            typeof route.handler !== 'function'
+          ) {
             throw new Error(`Invalid route returned by: ${abs}`)
           }
 

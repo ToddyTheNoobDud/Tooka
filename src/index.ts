@@ -56,7 +56,7 @@ class Tooka extends EventEmitter {
   }
 
   async start(): Promise<void> {
-    const now  = performance.now()
+    const now = performance.now()
     await loadSources(path.join(import.meta.dir, 'sources'))
 
     await this.router.loadDir(path.join(import.meta.dir, 'endpoints'))
@@ -186,7 +186,10 @@ class Tooka extends EventEmitter {
     })
   }
 
-  private handleWebSocketMessage(ws: ServerWebSocket<WSData>, message: any): void {
+  private handleWebSocketMessage(
+    ws: ServerWebSocket<WSData>,
+    message: any
+  ): void {
     const text =
       typeof message === 'string'
         ? message

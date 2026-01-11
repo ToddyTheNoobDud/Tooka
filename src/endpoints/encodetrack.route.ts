@@ -1,19 +1,6 @@
 import type { Route, Ctx } from '../types'
 import { encodeTrack } from '../utils'
-import Ajv from 'ajv'
-
-const ajv = new Ajv({ allErrors: true })
-
-const trackSchema = {
-  type: 'object',
-  additionalProperties: false,
-  required: ['track'],
-  properties: {
-    track: { type: 'object' }
-  }
-} as const
-
-const validateTrack = ajv.compile(trackSchema)
+import { q } from '../utils/query'
 
 export default function encodeTrackRoute(ctx: Ctx): Route {
   return {
@@ -21,33 +8,24 @@ export default function encodeTrackRoute(ctx: Ctx): Route {
     path: '/encodetrack',
     handler: async (req: Request) => {
       try {
-        const url = new URL(req.url)
-        const trackParam = url.searchParams.get('track')
+        const trackParam = q(req).get('track')
+        if (!trackParam) return new Response('Missing track parameter', { status: 400 })
 
-        if (!trackParam) {
-          return new Response('Missing track parameter', { status: 400 })
-        }
-
-        let track: any
+        let track: unknown
         try {
           track = JSON.parse(trackParam)
         } catch {
-          return new Response('Invalid JSON in track parameter', {
-            status: 400
-          })
+          return new Response('Invalid JSON in track parameter', { status: 400 })
         }
 
-        const body = { track }
-
-        if (!validateTrack(body)) {
+        if (!track || typeof track !== 'object' || Array.isArray(track)) {
           ctx.logger?.warn?.('Invalid track payload', {
-            errors: validateTrack.errors
+            errors: ['track must be a JSON object']
           })
           return new Response('Bad Request', { status: 400 })
         }
 
-        const encoded = encodeTrack(body.track)
-        return new Response(encoded, {
+        return new Response(encodeTrack(track), {
           status: 200,
           headers: { 'Content-Type': 'text/plain' }
         })

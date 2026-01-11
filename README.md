@@ -20,7 +20,7 @@ This project is focused on personal use, so i may just do specific stuff for mys
   - [] Seek
   - [] Pause/Resume
   - [] Volume
-  - [] Filters 
+  - [] Filters
 - Websocket
   - [] Connect
   - [] Disconnect

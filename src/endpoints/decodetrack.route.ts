@@ -10,7 +10,8 @@ export default function decodeTrackRoute(ctx: Ctx): Route {
       try {
         const sp = q(req)
         const encoded = sp.get('encoded') || sp.get('encodedTrack')
-        if (!encoded) return new Response('Missing encoded parameter', { status: 400 })
+        if (!encoded)
+          return new Response('Missing encoded parameter', { status: 400 })
 
         return Response.json(decodeTrack(encoded), { status: 200 })
       } catch (error) {

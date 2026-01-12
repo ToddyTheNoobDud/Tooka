@@ -9,13 +9,16 @@ export default function encodeTrackRoute(ctx: Ctx): Route {
     handler: async (req: Request) => {
       try {
         const trackParam = q(req).get('track')
-        if (!trackParam) return new Response('Missing track parameter', { status: 400 })
+        if (!trackParam)
+          return new Response('Missing track parameter', { status: 400 })
 
         let track: unknown
         try {
           track = JSON.parse(trackParam)
         } catch {
-          return new Response('Invalid JSON in track parameter', { status: 400 })
+          return new Response('Invalid JSON in track parameter', {
+            status: 400
+          })
         }
 
         if (!track || typeof track !== 'object' || Array.isArray(track)) {

@@ -22,7 +22,10 @@ export class Router {
       throw new Error(`Route path must start with "/": ${method} ${route.path}`)
     }
 
-    if (route.path === this.basePath || route.path.startsWith(this.basePath + '/')) {
+    if (
+      route.path === this.basePath ||
+      route.path.startsWith(this.basePath + '/')
+    ) {
       throw new Error(
         `Do not include "${this.basePath}" in route.path. Use "/info" not "${this.basePath}/info". Got: ${route.path}`
       )
@@ -41,28 +44,40 @@ export class Router {
       const abs = path.join(dirAbs, rel)
       const href = pathToFileURL(abs).href
 
-      loads.push((async () => {
-        const mod = await import(href)
-        const factory: RouteFactory | undefined = mod.default
-        if (typeof factory !== 'function') {
-          throw new Error(`Route file must default-export a function(ctx) => route: ${abs}`)
-        }
+      loads.push(
+        (async () => {
+          const mod = await import(href)
+          const factory: RouteFactory | undefined = mod.default
+          if (typeof factory !== 'function') {
+            throw new Error(
+              `Route file must default-export a function(ctx) => route: ${abs}`
+            )
+          }
 
-        const route = await factory(this.ctx)
-        if (!route?.method || !route?.path || typeof route.handler !== 'function') {
-          throw new Error(`Invalid route returned by: ${abs}`)
-        }
+          const route = await factory(this.ctx)
+          if (
+            !route?.method ||
+            !route?.path ||
+            typeof route.handler !== 'function'
+          ) {
+            throw new Error(`Invalid route returned by: ${abs}`)
+          }
 
-        this.register(route)
-      })())
+          this.register(route)
+        })()
+      )
     }
 
     await Promise.all(loads)
   }
 
-  fetch = async (req: Request, server: Server): Promise<Response> => {
-    const { pathname } = new URL(req.url)
-    const key = req.method.toUpperCase() + ' ' + pathname
+  fetch = async (
+    req: Request,
+    server: Server,
+    pathname?: string
+  ): Promise<Response> => {
+    const p = pathname ?? new URL(req.url).pathname
+    const key = req.method.toUpperCase() + ' ' + p
     const handler = this.routes.get(key)
 
     if (!handler) return new Response('Not Found', { status: 404 })

@@ -18,41 +18,53 @@ const PLUGIN_KEYS = new Set(['name', 'version', 'author', 'path'])
 function validateV4InfoLite(x: any): string[] | null {
   if (!x || typeof x !== 'object') return ['response must be an object']
 
-  for (const k in x) if (!V4_KEYS.has(k)) return [`unexpected top-level key: ${k}`]
+  for (const k in x)
+    if (!V4_KEYS.has(k)) return [`unexpected top-level key: ${k}`]
   for (const k of V4_KEYS) if (!(k in x)) return [`missing key: ${k}`]
 
   const v = x.version
-  if (!v || typeof v !== 'object' || typeof v.semver !== 'string') return ['version.semver must be a string']
+  if (!v || typeof v !== 'object' || typeof v.semver !== 'string')
+    return ['version.semver must be a string']
 
   const bt = x.buildTime
-  if (!(bt === null || typeof bt === 'string' || typeof bt === 'number')) return ['buildTime must be string|number|null']
+  if (!(bt === null || typeof bt === 'string' || typeof bt === 'number'))
+    return ['buildTime must be string|number|null']
 
   if (!x.git || typeof x.git !== 'object') return ['git must be an object']
   if (typeof x.isTooka !== 'boolean') return ['isTooka must be boolean']
 
   const rt = x.runtime
   if (!rt || typeof rt !== 'object') return ['runtime must be an object']
-  for (const k in rt) if (!RUNTIME_KEYS.has(k)) return [`unexpected runtime key: ${k}`]
-  if (typeof rt.bun !== 'string' || typeof rt.node !== 'string') return ['runtime.bun and runtime.node must be strings']
+  for (const k in rt)
+    if (!RUNTIME_KEYS.has(k)) return [`unexpected runtime key: ${k}`]
+  if (typeof rt.bun !== 'string' || typeof rt.node !== 'string')
+    return ['runtime.bun and runtime.node must be strings']
 
   const sm = x.sourceManagers
   if (!Array.isArray(sm)) return ['sourceManagers must be an array']
-  for (let i = 0; i < sm.length; i++) if (typeof sm[i] !== 'string') return ['sourceManagers must be string[]']
+  for (let i = 0; i < sm.length; i++)
+    if (typeof sm[i] !== 'string') return ['sourceManagers must be string[]']
 
   const f = x.filters
   if (!Array.isArray(f)) return ['filters must be an array']
-  for (let i = 0; i < f.length; i++) if (typeof f[i] !== 'string') return ['filters must be string[]']
+  for (let i = 0; i < f.length; i++)
+    if (typeof f[i] !== 'string') return ['filters must be string[]']
 
   const pl = x.plugins
   if (!Array.isArray(pl)) return ['plugins must be an array']
   for (let i = 0; i < pl.length; i++) {
     const p = pl[i]
     if (!p || typeof p !== 'object') return [`plugins[${i}] must be an object`]
-    for (const k in p) if (!PLUGIN_KEYS.has(k)) return [`unexpected plugins[${i}] key: ${k}`]
-    for (const k of PLUGIN_KEYS) if (!(k in p)) return [`missing plugins[${i}].${k}`]
-    if (typeof p.name !== 'string' || typeof p.version !== 'string') return [`plugins[${i}].name/version must be strings`]
-    if (!(p.author === null || typeof p.author === 'string')) return [`plugins[${i}].author must be string|null`]
-    if (!(p.path === null || typeof p.path === 'string')) return [`plugins[${i}].path must be string|null`]
+    for (const k in p)
+      if (!PLUGIN_KEYS.has(k)) return [`unexpected plugins[${i}] key: ${k}`]
+    for (const k of PLUGIN_KEYS)
+      if (!(k in p)) return [`missing plugins[${i}].${k}`]
+    if (typeof p.name !== 'string' || typeof p.version !== 'string')
+      return [`plugins[${i}].name/version must be strings`]
+    if (!(p.author === null || typeof p.author === 'string'))
+      return [`plugins[${i}].author must be string|null`]
+    if (!(p.path === null || typeof p.path === 'string'))
+      return [`plugins[${i}].path must be string|null`]
   }
 
   return null

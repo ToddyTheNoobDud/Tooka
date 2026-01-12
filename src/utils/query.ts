@@ -12,12 +12,17 @@ export function getInt(sp: URLSearchParams, key: string): number | null {
   return Number.isInteger(n) ? n : null
 }
 
-export function getJsonObject(sp: URLSearchParams, key: string): Record<string, unknown> | null {
+export function getJsonObject(
+  sp: URLSearchParams,
+  key: string
+): Record<string, unknown> | null {
   const v = sp.get(key)
   if (!v) return null
   try {
     const parsed = JSON.parse(v)
-    return parsed && typeof parsed === 'object' && !Array.isArray(parsed) ? parsed : null
+    return parsed && typeof parsed === 'object' && !Array.isArray(parsed)
+      ? parsed
+      : null
   } catch {
     return null
   }

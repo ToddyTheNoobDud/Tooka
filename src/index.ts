@@ -25,6 +25,8 @@ class Tooka extends EventEmitter {
   private readonly router: Router
   private readonly connections = new Set<ServerWebSocket<WSData>>()
   private readonly sessions = new Map<string, Session>()
+  private sweepTimer?: ReturnType<typeof setInterval>
+  private readonly td = new TextDecoder()
 
   constructor(config: Config) {
     super()
@@ -39,12 +41,7 @@ class Tooka extends EventEmitter {
       options: { filters: { enabled: {} } },
       sources: { sources: sourceManagerRegistry }
     }
-
-    return {
-      tooka,
-      logger,
-      config: this.config
-    }
+    return { tooka, logger, config: this.config }
   }
 
   private send(ws: ServerWebSocket<WSData>, payload: unknown): void {
@@ -55,10 +52,44 @@ class Tooka extends EventEmitter {
     return req.headers.get(name) ?? req.headers.get(name.toLowerCase())
   }
 
-  async start(): Promise<void> {
-    const now = performance.now()
-    await loadSources(path.join(import.meta.dir, 'sources'))
+  private authToken(req: Request): string | null {
+    const v = req.headers.get('authorization')
+    if (!v) return null
+    return v.startsWith('Bearer ') ? v.slice(7) : v
+  }
 
+  private assertHttpAuth(
+    req: Request,
+    ip: string,
+    pathname: string
+  ): Response | null {
+    if (!pathname.startsWith('/v4/') || pathname === '/v4/websocket')
+      return null
+
+    const password = this.config.server.password
+    if (!password) return null
+
+    if (this.authToken(req) !== password) {
+      logger.warn('Invalid password', { ip, pathname })
+      return new Response('Invalid password provided.', { status: 401 })
+    }
+    return null
+  }
+
+  private startSessionSweeper(): void {
+    if (this.sweepTimer) return
+    this.sweepTimer = setInterval(() => {
+      const now = Date.now()
+      for (const [id, s] of this.sessions) {
+        if (!s.ws && s.resumeDeadline && s.resumeDeadline <= now)
+          this.sessions.delete(id)
+      }
+    }, 30_000)
+    this.sweepTimer.unref?.()
+  }
+
+  async start(): Promise<void> {
+    await loadSources(path.join(import.meta.dir, 'sources'))
     await this.router.loadDir(path.join(import.meta.dir, 'endpoints'))
 
     logger.info('Starting server...', {
@@ -70,14 +101,18 @@ class Tooka extends EventEmitter {
       port: this.config.server.port,
       hostname: this.config.server.host,
 
-      fetch: async (req, bunServer) => {
-        const url = new URL(req.url)
+      fetch: (req, bunServer) => {
+        const { pathname } = new URL(req.url)
 
-        if (url.pathname === '/v4/websocket') {
-          return this.handleWebSocketUpgrade(req, bunServer)
+        if (pathname === '/v4/websocket') {
+          return this.handleWebSocketUpgrade(req, bunServer) as any
         }
 
-        return this.router.fetch(req, bunServer as any)
+        const ip = bunServer.requestIP(req)?.address || 'unknown'
+        const unauthorized = this.assertHttpAuth(req, ip, pathname)
+        if (unauthorized) return unauthorized
+
+        return this.router.fetch(req, bunServer as any, pathname)
       },
 
       websocket: {
@@ -87,33 +122,36 @@ class Tooka extends EventEmitter {
       }
     })
 
+    this.startSessionSweeper()
+
     logger.info('Server listening', {
       host: this.config.server.host,
       port: server.port
     })
   }
 
-  private handleWebSocketUpgrade(req: Request, bunServer: any): Response {
-    if (req.method !== 'GET') {
+  private handleWebSocketUpgrade(
+    req: Request,
+    bunServer: any
+  ): Response | undefined {
+    if (req.method !== 'GET')
       return new Response('Method Not Allowed', { status: 405 })
-    }
 
     const remoteAddress = bunServer.requestIP(req)?.address || 'unknown'
-    const auth = this.getHeader(req, 'Authorization')
-    const userId = this.getHeader(req, 'User-Id')
-    const clientName = this.getHeader(req, 'Client-Name')
-    const sessionIdHeader = this.getHeader(req, 'Session-Id')
-
-    if (!auth || auth !== this.config.server.password) {
+    const password = this.config.server.password
+    if (password && this.authToken(req) !== password) {
       logger.warn('Invalid password', { remoteAddress })
       return new Response('Invalid password provided.', { status: 401 })
     }
+
+    const userId = this.getHeader(req, 'User-Id')
+    const clientName = this.getHeader(req, 'Client-Name')
+    const sessionIdHeader = this.getHeader(req, 'Session-Id')
 
     if (!userId) {
       logger.warn('Missing User-Id', { remoteAddress })
       return new Response('Missing User-Id header.', { status: 400 })
     }
-
     if (!clientName) {
       logger.warn('Missing Client-Name', { remoteAddress })
       return new Response('Missing Client-Name header.', { status: 400 })
@@ -124,14 +162,14 @@ class Tooka extends EventEmitter {
 
     if (sessionIdHeader) {
       const existing = this.sessions.get(sessionIdHeader)
-      if (existing && existing.userId === userId) {
-        if (
-          existing.resumeEnabled &&
-          (!existing.resumeDeadline || existing.resumeDeadline > Date.now())
-        ) {
-          resumed = true
-          session = existing
-        }
+      if (
+        existing &&
+        existing.userId === userId &&
+        existing.resumeEnabled &&
+        (!existing.resumeDeadline || existing.resumeDeadline > Date.now())
+      ) {
+        resumed = true
+        session = existing
       }
     }
 
@@ -156,15 +194,24 @@ class Tooka extends EventEmitter {
       resumed
     }
 
-    const ok = bunServer.upgrade(req, { data })
-    if (ok) return new Response('Upgrade successful')
-    return new Response('WebSocket upgrade failed', { status: 400 })
+    return bunServer.upgrade(req, { data })
+      ? undefined
+      : new Response('WebSocket upgrade failed', { status: 400 })
   }
 
   private handleWebSocketOpen(ws: ServerWebSocket<WSData>): void {
     this.connections.add(ws)
 
-    const session = this.sessions.get(ws.data.sessionId)
+    const sid = ws.data?.sessionId
+    if (!sid) {
+      this.connections.delete(ws)
+      try {
+        ws.close(1008, 'Missing session')
+      } catch {}
+      return
+    }
+
+    const session = this.sessions.get(sid)
     if (session) {
       session.ws = ws
       session.resumeDeadline = undefined
@@ -173,27 +220,22 @@ class Tooka extends EventEmitter {
     logger.info('WS connected', {
       userId: ws.data.userId,
       clientName: ws.data.clientName,
-      sessionId: ws.data.sessionId,
+      sessionId: sid,
       ip: ws.data.ip,
       resumed: ws.data.resumed,
       connections: this.connections.size
     })
 
-    this.send(ws, {
-      op: 'ready',
-      resumed: ws.data.resumed,
-      sessionId: ws.data.sessionId
-    })
+    this.send(ws, { op: 'ready', resumed: ws.data.resumed, sessionId: sid })
   }
 
   private handleWebSocketMessage(
     ws: ServerWebSocket<WSData>,
     message: any
   ): void {
-    const text =
-      typeof message === 'string'
-        ? message
-        : Buffer.from(message).toString('utf8')
+    if (!ws.data?.sessionId) return
+
+    const text = typeof message === 'string' ? message : this.td.decode(message)
 
     let payload: any
     try {
@@ -202,15 +244,16 @@ class Tooka extends EventEmitter {
       return
     }
 
-    if (payload?.op === 'configureResuming') {
-      this.configureResuming(ws, payload)
-    }
+    if (payload?.op === 'configureResuming') this.configureResuming(ws, payload)
   }
 
   private configureResuming(ws: ServerWebSocket<WSData>, payload: any): void {
-    const timeoutSeconds = Number(payload?.timeout ?? 60)
-    const session = this.sessions.get(ws.data.sessionId)
+    const sid = ws.data?.sessionId
+    if (!sid) return
 
+    const raw = Number(payload?.timeout ?? 60)
+    const timeoutSeconds = Number.isFinite(raw) ? raw : 60
+    const session = this.sessions.get(sid)
     if (!session) return
 
     session.resumeEnabled = true
@@ -230,18 +273,19 @@ class Tooka extends EventEmitter {
   ): void {
     this.connections.delete(ws)
 
-    const session = this.sessions.get(ws.data.sessionId)
+    const sid = ws.data?.sessionId
+    if (!sid) return
+
+    const session = this.sessions.get(sid)
     if (session) {
       session.ws = undefined
-      if (session.resumeEnabled) {
+      if (session.resumeEnabled)
         session.resumeDeadline = Date.now() + session.resumeTimeoutMs
-      } else {
-        this.sessions.delete(session.sessionId)
-      }
+      else this.sessions.delete(session.sessionId)
     }
 
     logger.info('WS disconnected', {
-      sessionId: ws.data.sessionId,
+      sessionId: sid,
       userId: ws.data.userId,
       code,
       reason: String(reason),

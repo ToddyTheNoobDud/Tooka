@@ -9,7 +9,8 @@ export default function loadTracksRoute(ctx: Ctx): Route {
     handler: async (req: Request) => {
       try {
         const identifier = getRequired(q(req), 'identifier')
-        if (!identifier) return new Response('Missing identifier parameter', { status: 400 })
+        if (!identifier)
+          return new Response('Missing identifier parameter', { status: 400 })
 
         const manager = sourceManagerRegistry.findManager(identifier)
         if (!manager) {
@@ -28,11 +29,16 @@ export default function loadTracksRoute(ctx: Ctx): Route {
         if (!Array.isArray(result)) {
           return Response.json({
             loadType: 'track',
-            data: { encoded: manager.encode(result), info: result, pluginInfo: {} }
+            data: {
+              encoded: manager.encode(result),
+              info: result,
+              pluginInfo: {}
+            }
           })
         }
 
-        if (result.length === 0) return Response.json({ loadType: 'empty', data: {} })
+        if (result.length === 0)
+          return Response.json({ loadType: 'empty', data: {} })
 
         return Response.json({
           loadType: 'search',

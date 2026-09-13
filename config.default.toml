@@ -1,0 +1,15 @@
+title = "Tooooooooooooka."
+
+[server]
+port = 3000
+password = "youshallnotpass"
+host = "0.0.0.0"
+useHttp2 = false # Bun has support for HTTP/2
+useExperimentalHttp3 = false # Bun has experimental support for http/3 and quic
+
+[logging]
+level = "debug" # "trace", "debug", "info", "warn", "error", "fatal"
+enableLogging = true # If you (idk why) want to disable logging, set this to false
+
+[config]
+disableConfigCheck = true # This disables the checking for extra fields, missing fields, etc. Everything basically.

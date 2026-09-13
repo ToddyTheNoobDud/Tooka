@@ -3,9 +3,14 @@
   "description": "Tooka is a bun-only standalone sending audio node, like nodelink/lavalink/ibuki etc.",
   "private": false,
   "devDependencies": {
+    "@biomejs/biome": "^2.5.13",
     "@types/bun": "latest"
   },
   "peerDependencies": {
     "typescript": "^7"
+  },
+  "dependencies": {
+    "pino": "^10.3.1",
+    "pino-pretty": "^13.1.3"
   }
 }

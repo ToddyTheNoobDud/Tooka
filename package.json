@@ -1,0 +1,11 @@
+{
+  "name": "tooka",
+  "description": "Tooka is a bun-only standalone sending audio node, like nodelink/lavalink/ibuki etc.",
+  "private": false,
+  "devDependencies": {
+    "@types/bun": "latest"
+  },
+  "peerDependencies": {
+    "typescript": "^7"
+  }
+}

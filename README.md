@@ -25,10 +25,10 @@ This project is focused on personal use, so i may just do specific stuff for mys
   - [] Pause/Resume
   - [] Volume
   - [] Filters
-  - [X] Search
+  - [] Search
 - Websocket
-  - [X] Connect
-  - [X] Disconnect
+  - [] Connect
+  - [] Disconnect
   - [] Resumes
 - Rest
   - [] Get Player

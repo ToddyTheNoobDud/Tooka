@@ -21,7 +21,7 @@ export class WebSocketServer {
     private readonly logger: pino.Logger
   ) {}
 
-  public async start() {
+  public start() {
     const server = Bun.serve({
       port: this.config.server.port,
       fetch() {

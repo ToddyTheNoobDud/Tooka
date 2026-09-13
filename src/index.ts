@@ -17,7 +17,7 @@ if (config.logging.enableLogging) {
   logger = pino({ level: 'silent' })
 }
 
-await new WebSocketServer(config, logger).start()
+new WebSocketServer(config, logger).start()
 
 logger.info('tooka has started.')
 

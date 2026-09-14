@@ -17,6 +17,8 @@ Everything on this repo is made from day-one, from scratch. Nodelink and lavalin
 
 This project is focused on personal use, so i may just do specific stuff for myself.
 
+Lavalink v4 api compatibility will be supported (i will try atleast to), so you don't need to work a lot "migrating" to tooka.
+
 ## Features
 
 - Music

@@ -5,13 +5,13 @@
  */
 
 import pino from 'pino'
-import { ConfigManager } from './managers/configmanager.ts'
+import { load } from './managers/configmanager.ts'
 import { handleErrors } from './process/errorhandler/handleerrors.ts'
 import { handleShutdown } from './process/shutdown/handleshutdown.ts'
 
 import { WebSocketServer } from './server/websocket.ts'
 
-const config = await new ConfigManager().load()
+const config = await load()
 
 let logger: pino.Logger
 if (config.logging.enableLogging) {

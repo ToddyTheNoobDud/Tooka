@@ -7,6 +7,10 @@ import type pino from 'pino'
 import { EndpointsManager } from '../managers/endpointsmanager'
 import type { ConfigProps } from '../types/config/configmanager.types'
 
+// now related to the websocket
+// 
+import { handleUpgrade } from './websocket/upgrade'
+
 export class WebSocketServer {
   private server: ReturnType<typeof Bun.serve> | undefined
 
@@ -39,7 +43,11 @@ export class WebSocketServer {
           this.logger.warn('Invalid authorization pass.')
           return new Response('Unauthorized', { status: 401 })
         }
-        if (upgradeServer.upgrade(request)) return
+        const upgraded = upgradeServer.upgrade(request)
+        if (upgraded) {
+          this.logger.info('WebSocket upgrade request received, client probaly connected with sucess.')
+          return
+        }
         return new Response('Not Found, also whatch date a live.', {
           status: 404
         })

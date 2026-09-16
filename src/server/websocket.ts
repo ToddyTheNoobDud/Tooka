@@ -7,10 +7,6 @@ import type pino from 'pino'
 import { EndpointsManager } from '../managers/endpointsmanager'
 import type { ConfigProps } from '../types/config/configmanager.types'
 
-// now related to the websocket
-// 
-import { handleUpgrade } from './websocket/upgrade'
-
 export class WebSocketServer {
   private server: ReturnType<typeof Bun.serve> | undefined
 

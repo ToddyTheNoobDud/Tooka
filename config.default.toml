@@ -12,4 +12,4 @@ level = "debug" # "trace", "debug", "info", "warn", "error", "fatal"
 enableLogging = true # If you (idk why) want to disable logging, set this to false
 
 [config]
-disableConfigCheck = true # This disables the checking for extra fields, missing fields, etc. Everything basically.
+disableConfigCheck = false # This disables the checking for extra fields, missing fields, etc. Everything basically.

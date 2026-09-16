@@ -6,88 +6,85 @@ import type { ConfigProps } from '../types/config/configmanager.types'
 
 /**
  * Loads a TOML module and unwraps its default export.
- * @returns The parsed config, or an empty object if not found.
+ * @returns The parsed config, or undefined if not found.
  */
-async function loadTomlConfig(path: string): Promise<Partial<ConfigProps>> {
+async function loadTomlConfig(
+  path: string
+): Promise<Partial<ConfigProps> | undefined> {
+  if (!(await Bun.file(path).exists())) return undefined
   try {
     const configModule = (await import(path)) as {
       default?: Partial<ConfigProps>
     }
     return configModule.default ?? {}
   } catch {
-    return {}
+    throw new Error(`Failed to load config from ${path}`)
   }
 }
 
-// /**
-//  * Merges user `config.toml` over defaults, writes it if missing.
-//  * @returns Resolves when config is ready.
-//  * @throws If user config fails to import/parse.
-//  */
-// export async function load(): Promise<ConfigProps> {
-//   const defaultConfig = await loadTomlConfig(
-//     `${process.cwd()}/config.default.toml`
-//   )
-//   let userConfig = await loadTomlConfig(`${process.cwd()}/config.toml`)
+/**
+ *
+ * @returns Resolves when config is ready.
+ * @throws If user config fails to import/parse.
+ */
+export async function load(): Promise<ConfigProps> {
+  const defaultConfig = await loadTomlConfig(
+    `${process.cwd()}/config.default.toml`
+  )
+  const userConfig = await loadTomlConfig(`${process.cwd()}/config.toml`)
 
-//   try {
-//     // Check if the user set 'disableConfigCheck' to true in the config
-//     // if so, skip all this checking process. If it errors, disable that please.
-//     // i just want this to be customizable, cus why not.
-//     if (userConfig.config?.disableConfigCheck) {
-//       console.log('Config check is enabled, skipping...')
+  // we have the default config but we don't have the userConfig file, so we just warn the user it does not exist and we create it.
+  if (defaultConfig === undefined && userConfig !== undefined) {
+    console.log('No default config found, using user config as default')
+    return userConfig as ConfigProps
+  }
 
-//       return userConfig as ConfigProps
-//     }
+  // now we don't have a default config but we do have the userConfig file, so we use it.
+  if (defaultConfig !== undefined && userConfig === undefined) {
+    console.log(
+      'No user config found, using default config and creating a new config.toml file for you.'
+    )
+    await Bun.write(
+      `${process.cwd()}/config.toml`,
+      Bun.TOML.stringify(defaultConfig) as string
+    )
+    return defaultConfig as ConfigProps
+  }
 
-//     // now we compare the user config with the default config
-//     // and check if theres any missing fields.
-//     // if there are, we merge the default config over the user config, but keep the user config's values
-//     // ITS NOT strictly yet, and its completely dependent on config default, soon i'll make a proper schema for this.
-//     // and everything else intact.
-//     const bunCheck = Bun.file(`${process.cwd()}/config.toml`) ?? {}
-//     const keys = Object.keys(defaultConfig).filter(
-//       (key) => !(key in userConfig)
-//     )
-//     if (keys.length > 0) {
-//       if (bunCheck.size === 0 || bunCheck === null) {
-//         console.log(
-//           "Seems like you don't have a config.toml file too, chill. Its gonna be created for you."
-//         )
-//       }
-//       console.log(`Missing fields in config: ${keys.join(', ')}`)
-//       userConfig = { ...defaultConfig, ...userConfig }
-//       console.log(`Added ${keys.length} missing field(s) to your config.`)
-//       await Bun.write(
-//         `${process.cwd()}/config.toml`,
-//         String(Bun.TOML.stringify(userConfig))
-//         // Bun transforms TOML into JSON internally, so we need to stringify it back when writing to toml again ^^
-//       )
-//     }
+  // now we don't have a default config and we don't have the userConfig file, tooka can't start without a config, pretty sad...
+  if (defaultConfig === undefined) {
+    throw new Error(
+      'Tooka has no default config file to be based on, so its not possible to start without it.'
+    )
+  }
 
-//     // since bun is "performant", lets abuse it a bit hehe :p
-//     // now we check if the config file has extras , and just warn the user about it.
-//     // Cuz the user can be deleloping something really cool and i don't want tooka to be overwriting their config.
+  if (userConfig?.config?.disableConfigCheck) {
+    console.log(
+      'Config check disabled, not checking for extra fields, missing fields, and even this.'
+    )
 
-//     if (keys.length > 0) {
-//       console.log(`Extra fields in config: ${keys.join(', ')}`)
-//     }
+    return userConfig as ConfigProps
+  }
 
-//     // now, we can have the same length in default config as the user config
-//     // but it can also happens: the user config has the wrong namings (e.g. disableConfigCheck instead of enableConfigCheck)
-//     // so we can also check this, and if it has found anything like that, we can also just warn the user about it.
-//     // I def also would like to implement something like a fuzzy search to find the correct field name,
-//     // so it would be a nice way to find the namings, yet thats just me saying.
-//     // todo.
+  // now we will iterate over the userConfig and check for extra fields, missing fields, etc
+  const keys = Object.keys(defaultConfig).filter((key) => !(key in userConfig!))
+  if (keys.length > 0) {
+    console.log(`Found ${keys.length} missing field(s) in your config.toml: ${keys.join(', ')}`)
+    console.log('It will be added automatically to your config.toml.')
+    const updatedConfig = { ...defaultConfig, ...userConfig }
+    await Bun.write(
+      `${process.cwd()}/config.toml`,
+      Bun.TOML.stringify(updatedConfig) as string
+    )
+    return updatedConfig as ConfigProps
+  }
 
-//     console.log('Your configs loaded normally, yay!')
-//     return userConfig as ConfigProps
-//   } catch (error) {
-//     console.log(
-//       new Error(
-//         `Failed to load config: ${error}, Shutting down tooka so bad things don't happen.`
-//       )
-//     )
-//     process.exit(1)
-//   }
-// }
+  // now we just warn if there are extra fields in the userConfig
+  const extraKeys = Object.keys(userConfig!).filter((key) => !(key in defaultConfig))
+  if (extraKeys.length > 0) {
+    console.log(`Found ${extraKeys.length} extra field(s) in your config.toml: ${extraKeys.join(', ')}`)
+    console.log('This is just a warn, the extra fields will be ignored.')
+  }
+
+  return userConfig as ConfigProps
+}

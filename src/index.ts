@@ -6,8 +6,6 @@
 
 import pino from 'pino'
 import { load } from './managers/configmanager.ts'
-import { handleErrors } from './process/errorhandler/handleerrors.ts'
-import { handleShutdown } from './process/shutdown/handleshutdown.ts'
 
 import { WebSocketServer } from './server/websocket.ts'
 
@@ -25,6 +23,15 @@ if (config.logging.enableLogging) {
 
 const server = new WebSocketServer(config, logger)
 server.start()
+
+function handleErrors(error: Error, isExit: boolean, logger: Logger) {
+  logger.error(error)
+  if (isExit) process.exit(1)
+}
+
+function handleShutdown(server: WebSocketServer, force?: boolean) {
+  server.stop(force)
+}
 
 process.once('SIGINT', () => handleShutdown(server))
 process.once('SIGTERM', () => handleShutdown(server))

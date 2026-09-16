@@ -6,8 +6,8 @@
 
 import pino from 'pino'
 import { ConfigManager } from './managers/configmanager.ts'
-import { handleShutdown } from './process/shutdown/handleshutdown.ts'
 import { handleErrors } from './process/errorhandler/handleerrors.ts'
+import { handleShutdown } from './process/shutdown/handleshutdown.ts'
 
 import { WebSocketServer } from './server/websocket.ts'
 
@@ -15,7 +15,10 @@ const config = await new ConfigManager().load()
 
 let logger: pino.Logger
 if (config.logging.enableLogging) {
-  logger = pino({ level: config.logging.level, transport: { target: 'pino-pretty' } })
+  logger = pino({
+    level: config.logging.level,
+    transport: { target: 'pino-pretty' }
+  })
 } else {
   logger = pino({ level: 'silent' })
 }
@@ -27,8 +30,12 @@ process.once('SIGINT', () => handleShutdown(server))
 process.once('SIGTERM', () => handleShutdown(server))
 
 process.on('uncaughtException', (error) => handleErrors(error, false, logger))
-process.on('unhandledRejection', (reason) => handleErrors(reason as Error, false, logger))
-process.on('uncaughtExceptionMonitor', (error) => handleErrors(error, true, logger))
+process.on('unhandledRejection', (reason) =>
+  handleErrors(reason as Error, false, logger)
+)
+process.on('uncaughtExceptionMonitor', (error) =>
+  handleErrors(error, true, logger)
+)
 
 logger.info('tooka has started.')
 

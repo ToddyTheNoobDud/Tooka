@@ -28,6 +28,12 @@ export class EndpointsManager {
     string,
     Partial<Record<HttpMethod, RouteHandler>>
   > {
+    // i'll give prefence into manually registering endpoints, why?
+    // i soon want to make it more customizable (so you can disable/enable any endpoint you want to)
+    // or just make this register everything automatically,
+    // mostly because i pretend to add: https://bun.sh/docs/runtime/http/server#hot-route-reloading
+    // so i can reload the endpoints / update stuff without restarting tooka.
+
     const endpoints: Endpoint[] = [infoEndpoint, VersionEndpoint]
     const routes: Record<string, Partial<Record<HttpMethod, RouteHandler>>> = {}
     for (const endpoint of endpoints) {

@@ -12,6 +12,6 @@ export interface ConfigProps {
     useHttp2: boolean
     useExperimentalHttp3: boolean
   }
-  logging: { level: Level, enableLogging: boolean }
+  logging: { level: Level; enableLogging: boolean }
   config: { disableConfigCheck: boolean }
 }

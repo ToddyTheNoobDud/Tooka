@@ -38,7 +38,7 @@ export class ConfigManager {
       // i just want this to be customizable, cus why not.
       if (userConfig.config?.disableConfigCheck) {
         console.log('Config check is enabled, skipping...')
-        
+
         return userConfig as ConfigProps
       }
 
@@ -59,9 +59,7 @@ export class ConfigManager {
         }
         console.log(`Missing fields in config: ${keys.join(', ')}`)
         userConfig = { ...defaultConfig, ...userConfig }
-        console.log(
-          `Added ${keys.length} missing field(s) to your config.`
-        )
+        console.log(`Added ${keys.length} missing field(s) to your config.`)
         await Bun.write(
           `${process.cwd()}/config.toml`,
           String(Bun.TOML.stringify(userConfig))
@@ -76,13 +74,14 @@ export class ConfigManager {
       if (keys.length > 0) {
         console.log(`Extra fields in config: ${keys.join(', ')}`)
       }
-      // if we don't have extra fields, or missing fields, and we have the same 
-      // quantity of fields as the default config, we also can check if the config name is the same as the default config name
-      // example: inside the [config] section, in default, we have disableConfigCheck, but in the user config, we have enableConfigCheck
-      // thats why we need to check if the config name is the same as the default config name
-      // if it's not, we can warn the user that their config name is not the same as the default config name
-      // todo.
       
+      // now, we can have the same length in default config as the user config
+      // but it can also happens: the user config has the wrong namings (e.g. disableConfigCheck instead of enableConfigCheck)
+      // so we can also check this, and if it has found anything like that, we can also just warn the user about it.
+      // I def also would like to implement something like a fuzzy search to find the correct field name,
+      // so it would be a nice way to find the namings, yet thats just me saying.
+      // todo.
+
       console.log('Your configs loaded normally, yay!')
       return userConfig as ConfigProps
     } catch (error) {

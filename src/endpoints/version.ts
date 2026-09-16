@@ -5,6 +5,6 @@ export const VersionEndpoint: Endpoint = {
   method: 'GET',
   description: 'Returns tooka version',
   handle: () => {
-    return new Response('1.0.0');
+    return new Response('1.0.0')
   }
 }

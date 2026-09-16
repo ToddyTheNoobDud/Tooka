@@ -1,4 +1,4 @@
-import type { Logger } from "pino"
+import type { Logger } from 'pino'
 
 export function handleErrors(error: Error, isExit: boolean, logger: Logger) {
   logger.error(error)

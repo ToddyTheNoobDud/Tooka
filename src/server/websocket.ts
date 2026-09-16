@@ -15,17 +15,34 @@ export class WebSocketServer {
     private readonly logger: pino.Logger
   ) {}
 
-  public start() {
+  public start(): void {
     const endpoints = new EndpointsManager(this.config, this.logger)
-    const server = Bun.serve({
+    const server: ReturnType<typeof Bun.serve> = Bun.serve<undefined>({
       port: this.config.server.port,
       hostname: this.config.server.host,
       routes: {
         '/': () => new Response('Hi'),
         ...endpoints.buildRoutes()
       },
-      fetch() {
-        return Response.json({ message: 'You should watch date a live.' })
+      websocket: {
+        message(_ws, message) {
+          console.log(message)
+        },
+        close(ws) {
+          console.log(ws)
+        }
+      },
+      fetch: (request, upgradeServer) => {
+        if (
+          request.headers.get('Authorization') !== this.config.server.password
+        ) {
+          this.logger.warn('Invalid authorization pass.')
+          return new Response('Unauthorized', { status: 401 })
+        }
+        if (upgradeServer.upgrade(request)) return
+        return new Response('Not Found, also whatch date a live.', {
+          status: 404
+        })
       }
     })
     this.logger.info(`WebSocket server started on url ${server.url}`)

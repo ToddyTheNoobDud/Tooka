@@ -13,3 +13,7 @@ enableLogging = true # If you (idk why) want to disable logging, set this to fal
 
 [config]
 disableConfigCheck = false # This disables the checking for extra fields, missing fields, etc. Everything basically.
+
+[sources.soundcloud]
+enable = true # Set to false to disable the SoundCloud source
+clientId = "" # SoundCloud client id, if not set will be scraped.

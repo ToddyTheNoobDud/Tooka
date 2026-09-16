@@ -47,11 +47,8 @@ export async function load(): Promise<ConfigProps> {
 
     const defaultPath = `${process.cwd()}/config.default.toml`
     const userPath = `${process.cwd()}/config.toml`
-    
-    await Bun.write(
-      userPath,
-      Bun.file(defaultPath)
-    )
+
+    await Bun.write(userPath, Bun.file(defaultPath))
     return defaultConfig as ConfigProps
   }
 
@@ -73,7 +70,9 @@ export async function load(): Promise<ConfigProps> {
   // now we will iterate over the userConfig and check for extra fields, missing fields, etc
   const keys = Object.keys(defaultConfig).filter((key) => !(key in userConfig!))
   if (keys.length > 0) {
-    console.log(`Found ${keys.length} missing field(s) in your config.toml: ${keys.join(', ')}`)
+    console.log(
+      `Found ${keys.length} missing field(s) in your config.toml: ${keys.join(', ')}`
+    )
     console.log('It will be added automatically to your config.toml.')
     const updatedConfig = { ...defaultConfig, ...userConfig }
     await Bun.write(
@@ -84,9 +83,13 @@ export async function load(): Promise<ConfigProps> {
   }
 
   // now we just warn if there are extra fields in the userConfig
-  const extraKeys = Object.keys(userConfig!).filter((key) => !(key in defaultConfig))
+  const extraKeys = Object.keys(userConfig!).filter(
+    (key) => !(key in defaultConfig)
+  )
   if (extraKeys.length > 0) {
-    console.log(`Found ${extraKeys.length} extra field(s) in your config.toml: ${extraKeys.join(', ')}`)
+    console.log(
+      `Found ${extraKeys.length} extra field(s) in your config.toml: ${extraKeys.join(', ')}`
+    )
     console.log('This is just a warn, the extra fields will be ignored.')
   }
 

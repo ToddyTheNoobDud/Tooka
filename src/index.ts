@@ -6,8 +6,8 @@
 
 import pino from 'pino'
 import { load } from './managers/configmanager.ts'
-
 import { WebSocketServer } from './server/websocket.ts'
+import { loadSources } from './sources/index.ts'
 
 const config = await load()
 
@@ -20,6 +20,8 @@ if (config.logging.enableLogging) {
 } else {
   logger = pino({ level: 'silent' })
 }
+
+await loadSources({ config, logger })
 
 const server = new WebSocketServer(config, logger)
 server.start()

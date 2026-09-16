@@ -25,8 +25,8 @@ export class WebSocketServer {
         ...endpoints.buildRoutes()
       },
       websocket: {
-        message(_ws, message) {
-          console.log(message)
+        message(ws, message) {
+          console.log(message, ws)
         },
         close(ws) {
           console.log(ws)
@@ -39,9 +39,21 @@ export class WebSocketServer {
           this.logger.warn('Invalid authorization pass.')
           return new Response('Unauthorized', { status: 401 })
         }
+        if (
+          !request.headers.get('User-Id') ||
+          !request.headers.get('Client-Name')
+        ) {
+          this.logger.warn('Missing User-Id or Client-Name headers.')
+          return new Response(
+            'User-Id or Client-Name headers missing, Tooka requires both',
+            { status: 401 }
+          )
+        }
         const upgraded = upgradeServer.upgrade(request)
         if (upgraded) {
-          this.logger.info('WebSocket upgrade request received, client probaly connected with sucess.')
+          this.logger.info(
+            `WebSocket upgrade request received, client probaly connected with sucess. User-Id: ${request.headers.get('User-Id')}, Client-Name: ${request.headers.get('Client-Name')}`
+          )
           return
         }
         return new Response('Not Found, also whatch date a live.', {

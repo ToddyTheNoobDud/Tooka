@@ -1,5 +1,6 @@
 import type pino from 'pino'
 import { infoEndpoint } from '../endpoints/info'
+import { loadTracksEndpoint } from '../endpoints/loadtracks'
 import { VersionEndpoint } from '../endpoints/version'
 
 import type {
@@ -34,7 +35,11 @@ export class EndpointsManager {
     // mostly because i pretend to add: https://bun.sh/docs/runtime/http/server#hot-route-reloading
     // so i can reload the endpoints / update stuff without restarting tooka.
 
-    const endpoints: Endpoint[] = [infoEndpoint, VersionEndpoint]
+    const endpoints: Endpoint[] = [
+      infoEndpoint,
+      VersionEndpoint,
+      loadTracksEndpoint
+    ]
     const routes: Record<string, Partial<Record<HttpMethod, RouteHandler>>> = {}
     for (const endpoint of endpoints) {
       const handlers = routes[endpoint.path] ?? {}

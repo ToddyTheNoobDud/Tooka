@@ -14,4 +14,5 @@ export interface ConfigProps {
   }
   logging: { level: Level; enableLogging: boolean }
   config: { disableConfigCheck: boolean }
+  sources: { soundcloud: { enable: boolean; clientId?: string } }
 }

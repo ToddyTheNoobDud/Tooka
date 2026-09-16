@@ -49,7 +49,7 @@ export class WebSocketServer {
         })
       }
     })
-    this.logger.info(`WebSocket server started on url ${server.url}`)
+    this.logger.info(`WebSocket server started on port ${server.port}`)
     this.server = server
   }
 

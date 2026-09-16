@@ -2,6 +2,9 @@
   "name": "tooka",
   "description": "Tooka is a bun-only standalone sending audio node, like nodelink/lavalink/ibuki etc.",
   "private": false,
+  "scripts": {
+    "start": "bun src/index.ts"
+  },
   "devDependencies": {
     "@biomejs/biome": "^2.5.13",
     "@types/bun": "latest"

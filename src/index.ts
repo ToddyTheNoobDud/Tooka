@@ -24,7 +24,7 @@ if (config.logging.enableLogging) {
 const server = new WebSocketServer(config, logger)
 server.start()
 
-function handleErrors(error: Error, isExit: boolean, logger: Logger) {
+function handleErrors(error: Error, isExit: boolean, logger: pino.Logger) {
   logger.error(error)
   if (isExit) process.exit(1)
 }

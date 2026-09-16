@@ -44,9 +44,13 @@ export async function load(): Promise<ConfigProps> {
     console.log(
       'No user config found, using default config and creating a new config.toml file for you.'
     )
+
+    const defaultPath = `${process.cwd()}/config.default.toml`
+    const userPath = `${process.cwd()}/config.toml`
+    
     await Bun.write(
-      `${process.cwd()}/config.toml`,
-      Bun.TOML.stringify(defaultConfig) as string
+      userPath,
+      Bun.file(defaultPath)
     )
     return defaultConfig as ConfigProps
   }

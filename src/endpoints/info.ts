@@ -1,4 +1,5 @@
 import type { Endpoint } from '../shared/endpoints/base'
+import type { InfoResponse } from '../types/endpoints/info.types'
 
 // will separate this better one day.
 //
@@ -9,8 +10,7 @@ import type { Endpoint } from '../shared/endpoints/base'
 // then for getting the epoch milliseconds: instant.epochMilliseconds
 // This replaces Date.now(), but since this api is too new, im not gonna implement it.
 
-function buildJson(): string {
-  // for now js return this hardcoded json
+function buildJson(): InfoResponse {
   return {
     version: {
       semver: '1.0.0',
@@ -20,14 +20,17 @@ function buildJson(): string {
       preRelease: '0',
       build: 'tooka'
     },
-    buildTime: Date.now(),
     git: {
       branch: 'dev',
       commit: '50f819b',
       commitTime: Date.now()
     },
-    isTooka: true
-  } as any
+    bun: process.versions.bun,
+    isTooka: true,
+    sourceManagers: [],
+    filters: [],
+    plugins: []
+  }
 }
 
 export const infoEndpoint: Endpoint = {

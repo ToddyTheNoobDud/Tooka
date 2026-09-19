@@ -33,6 +33,11 @@ export class WebSocketServer {
         }
       },
       fetch: (request, upgradeServer) => {
+        const isUpgrade =
+          request.headers.get('upgrade')?.toLowerCase() === 'websocket'
+        if (!isUpgrade) {
+          return new Response('Not Found', { status: 404 })
+        }
         if (
           request.headers.get('Authorization') !== this.config.server.password
         ) {
@@ -50,19 +55,10 @@ export class WebSocketServer {
           )
         }
         const upgraded = upgradeServer.upgrade(request, {
-          headers: {
-            'Iamtooka': 'true'
-          }
+          headers: { Iamtooka: 'true' }
         })
-        if (upgraded) {
-          this.logger.info(
-            `WebSocket upgrade request received, client probaly connected with sucess. User-Id: ${request.headers.get('User-Id')}, Client-Name: ${request.headers.get('Client-Name')}`
-          )
-          return
-        }
-        return new Response('Not Found, also whatch date a live.', {
-          status: 404
-        })
+        if (upgraded) return
+        return new Response('Not Found', { status: 404 })
       }
     })
     this.logger.info(`WebSocket server started on port ${server.port}`)

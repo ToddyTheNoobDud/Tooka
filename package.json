@@ -2,6 +2,10 @@
   "name": "tooka",
   "description": "Tooka is a bun-only standalone sending audio node, like nodelink/lavalink/ibuki etc.",
   "private": false,
+  "packageManager": "bun@1.4.2",
+  "engines": {
+    "bun": ">=1.4.0"
+  },
   "scripts": {
     "start": "bun src/index.ts"
   },

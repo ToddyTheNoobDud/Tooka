@@ -1,6 +1,6 @@
 import type pino from 'pino'
 import type { ConfigProps } from '../../types/config/configmanager.types'
-import type { Track } from '../../utils'
+import type { Track } from '../../types/utils'
 
 export interface SourceContext {
   config: ConfigProps

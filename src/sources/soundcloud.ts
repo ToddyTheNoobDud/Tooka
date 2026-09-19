@@ -1,5 +1,6 @@
 import type { LoadResult, Source, SourceContext } from '../shared/sources/base'
-import { encodeTrack, type Track, type TrackInfo } from '../utils'
+import { encodeTrack } from '../tracks/encoding'
+import type { Track, TrackInfo } from '../types/utils'
 
 const clientIdPattern = /client_id["':=\s]+["']?([A-Za-z0-9]{32})/
 

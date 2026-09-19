@@ -141,7 +141,8 @@ export function encodeTrack(track: EncodeTrackInput): string {
     (messageLength & 0x3fffffff) | ((trackFlags & 3) << 30),
     0
   )
-  return buffer.toString('base64')
+  // ecma 2026+  btw.
+  return buffer.toBase64()
 }
 
 function fieldSize(prepared: PreparedString): number {

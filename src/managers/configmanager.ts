@@ -59,6 +59,12 @@ export async function load(): Promise<ConfigProps> {
     )
   }
 
+  if (userConfig === undefined) {
+    throw new Error(
+      'Tooka has no config file to validate against. This should not happen.'
+    )
+  }
+
   if (userConfig?.config?.disableConfigCheck) {
     console.log(
       'Config check disabled, not checking for extra fields, missing fields, and even this.'
@@ -91,6 +97,39 @@ export async function load(): Promise<ConfigProps> {
       `Found ${extraKeys.length} extra field(s) in your config.toml: ${extraKeys.join(', ')}`
     )
     console.log('This is just a warn, the extra fields will be ignored.')
+  }
+
+  // now we check the sub keys to see if the naming can match correctly
+  // example: config.toml can have a subKey called "tooka", while the default config on the same position
+  // can have it named "shidou"
+  // so we check that, and just warn the user about it, i'll try making an fuzzy match later when i get better on this.
+  //
+
+  for (const [key, userBranch] of Object.entries(userConfig)) {
+    if (
+      userBranch === null ||
+      typeof userBranch !== 'object' ||
+      Array.isArray(userBranch)
+    ) {
+      continue
+    }
+
+    const defaultBranch = (defaultConfig as Record<string, unknown>)[key]
+    if (
+      defaultBranch === null ||
+      typeof defaultBranch !== 'object' ||
+      Array.isArray(defaultBranch)
+    ) {
+      continue
+    }
+
+    for (const subKey of Object.keys(userBranch)) {
+      if (!(subKey in defaultBranch)) {
+        console.log(
+          `Unknown sub-key "${subKey}" under "${key}" in config.toml (maybe renamed?). It will be ignored.`
+        )
+      }
+    }
   }
 
   return userConfig as ConfigProps

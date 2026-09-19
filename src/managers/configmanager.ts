@@ -73,30 +73,33 @@ export async function load(): Promise<ConfigProps> {
     return userConfig as ConfigProps
   }
 
-  // now we will iterate over the userConfig and check for extra fields, missing fields, etc
-  const keys = Object.keys(defaultConfig).filter((key) => !(key in userConfig!))
-  if (keys.length > 0) {
-    console.log(
-      `Found ${keys.length} missing field(s) in your config.toml: ${keys.join(', ')}`
-    )
-    console.log('It will be added automatically to your config.toml.')
-    const updatedConfig = { ...defaultConfig, ...userConfig }
-    await Bun.write(
-      `${process.cwd()}/config.toml`,
-      Bun.TOML.stringify(updatedConfig) as string
-    )
-    return updatedConfig as ConfigProps
-  }
+  if (userConfig) {
+    // now we will iterate over the userConfig and check for extra fields, missing fields, etc
 
-  // now we just warn if there are extra fields in the userConfig
-  const extraKeys = Object.keys(userConfig!).filter(
-    (key) => !(key in defaultConfig)
-  )
-  if (extraKeys.length > 0) {
-    console.log(
-      `Found ${extraKeys.length} extra field(s) in your config.toml: ${extraKeys.join(', ')}`
+    const keys = Object.keys(defaultConfig).filter((key) => !(key in userConfig))
+    if (keys.length > 0) {
+      console.log(
+        `Found ${keys.length} missing field(s) in your config.toml: ${keys.join(', ')}`
+      )
+      console.log('It will be added automatically to your config.toml.')
+      const updatedConfig = { ...defaultConfig, ...userConfig }
+      await Bun.write(
+        `${process.cwd()}/config.toml`,
+        Bun.TOML.stringify(updatedConfig) as string
+      )
+      return updatedConfig as ConfigProps
+    }
+
+    // now we just warn if there are extra fields in the userConfig
+    const extraKeys = Object.keys(userConfig).filter(
+      (key) => !(key in defaultConfig)
     )
-    console.log('This is just a warn, the extra fields will be ignored.')
+    if (extraKeys.length > 0) {
+      console.log(
+        `Found ${extraKeys.length} extra field(s) in your config.toml: ${extraKeys.join(', ')}`
+      )
+      console.log('This is just a warn, the extra fields will be ignored.')
+    }
   }
 
   // now we check the sub keys to see if the naming can match correctly

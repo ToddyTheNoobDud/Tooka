@@ -49,7 +49,11 @@ export class WebSocketServer {
             { status: 401 }
           )
         }
-        const upgraded = upgradeServer.upgrade(request)
+        const upgraded = upgradeServer.upgrade(request, {
+          headers: {
+            'Iamtooka': 'true'
+          }
+        })
         if (upgraded) {
           this.logger.info(
             `WebSocket upgrade request received, client probaly connected with sucess. User-Id: ${request.headers.get('User-Id')}, Client-Name: ${request.headers.get('Client-Name')}`

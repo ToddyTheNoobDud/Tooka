@@ -3,6 +3,12 @@ import type { Endpoint } from '../shared/endpoints/base'
 // will separate this better one day.
 //
 
+// https://www.w3schools.com/js/js_temporal_instant.asp
+// 
+// const instant = Temporal.Now.instant()
+// then for getting the epoch milliseconds: instant.epochMilliseconds
+// This replaces Date.now(), but since this api is too new, im not gonna implement it.
+
 function buildJson(): string {
   // for now js return this hardcoded json
   return {

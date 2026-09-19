@@ -69,7 +69,9 @@ export class EndpointsManager {
       logger: this.logger
     }
     try {
-      return await endpoint.handle(request, context)
+      const handle = await endpoint.handle(request, context)
+      handle.headers.set('Iamtooka', 'true')
+      return handle
     } catch (error) {
       this.logger.error(
         { error, method: endpoint.method, path: endpoint.path },

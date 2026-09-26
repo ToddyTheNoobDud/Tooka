@@ -10,10 +10,32 @@ useExperimentalHttp3 = false # Bun has experimental support for http/3 and quic
 [logging]
 level = "debug" # "trace", "debug", "info", "warn", "error", "fatal"
 enableLogging = true # If you (idk why) want to disable logging, set this to false
+logRequests = true # Log every REST request and response (-> / <- lines)
 
 [config]
 disableConfigCheck = false # This disables the checking for extra fields, missing fields, etc. Everything basically.
 
+[session]
+defaultTimeout = 60 # Seconds before an abandoned Tooka session is destroyed. Override per session via PATCH /v4/sessions/:sessionId.
+
+[player]
+updateIntervalMs = 5000 # How often player state is pushed over /v4/websocket. Clients derive `connected` from this.
+stuckThresholdMs = 10000 # Playing with no audio out for longer than this fires a TrackStuckEvent.
+
+[voice]
+handshakeTimeoutMs = 15000 # How long to wait for the Discord voice gateway hello, ready and session description.
+discoveryTimeoutMs = 5000 # How long to wait for UDP IP discovery.
+keepAliveIntervalMs = 5000 # How often to send UDP keepalives so NAT mappings stay open.
+encryption = "auto" # Voice transport encryption: "auto" (prefer AES-GCM, fall back to XChaCha), "aes" or "xchacha". Discord always offers XChaCha, AES-GCM depends on hardware. xchacha gives better ops/s performance.
+daveEnabled = true # Set to false to force transport-only encryption (no DAVE/E2EE). Debug and compat only, idk why you would disable this, only if you want to read errors n break the voice.
+
+[audio]
+bitrate = "96k" # ffmpeg opus bitrate used when transcoding. Higher sounds better, costs more cpu and bandwidth. This is temp since i pretend to move from ffmpeg.
+
+[sources]
+httpTimeoutMs = 15000 # Timeout for all source http requests (search, resolve, media).
+
 [sources.soundcloud]
 enable = true # Set to false to disable the SoundCloud source
 clientId = "" # SoundCloud client id, if not set will be scraped.
+searchLimit = 10 # How many tracks a SoundCloud search returns.

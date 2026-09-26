@@ -1,4 +1,4 @@
-import type { Endpoint } from '../shared/endpoints/base'
+import type { Endpoint } from '../shared/endpoints'
 
 export const VersionEndpoint: Endpoint = {
   path: '/version',

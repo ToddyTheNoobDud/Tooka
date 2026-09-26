@@ -1,4 +1,4 @@
-import type { ConfigProps } from '../types/config/configmanager.types'
+import type { ConfigProps } from '../types/config'
 
 // do not load the logger here, how you are supposed to config it while loading the config first than the logger.
 
@@ -20,6 +20,36 @@ async function loadTomlConfig(
   } catch {
     throw new Error(`Failed to load config from ${path}`)
   }
+}
+
+function isPlainRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value)
+}
+
+// Fills gaps in the user config with defaults, recursively. User values
+// always win. Exported for unit tests; the loader is its only caller.
+export function deepMergeDefaults(
+  defaults: Record<string, unknown>,
+  user: Record<string, unknown>,
+  prefix = ''
+): { merged: Record<string, unknown>; added: string[] } {
+  const merged: Record<string, unknown> = { ...user }
+  const added: string[] = []
+  for (const [key, defaultValue] of Object.entries(defaults)) {
+    const path = prefix ? `${prefix}.${key}` : key
+    if (!(key in user)) {
+      merged[key] = defaultValue
+      added.push(path)
+      continue
+    }
+    const userValue = user[key]
+    if (isPlainRecord(defaultValue) && isPlainRecord(userValue)) {
+      const nested = deepMergeDefaults(defaultValue, userValue, path)
+      merged[key] = nested.merged
+      added.push(...nested.added)
+    }
+  }
+  return { merged, added }
 }
 
 /**
@@ -65,31 +95,31 @@ export async function load(): Promise<ConfigProps> {
     )
   }
 
+  const { merged, added } = deepMergeDefaults(
+    defaultConfig as Record<string, unknown>,
+    userConfig as Record<string, unknown>
+  )
+
   if (userConfig?.config?.disableConfigCheck) {
     console.log(
       'Config check disabled, not checking for extra fields, missing fields, and even this.'
     )
 
-    return userConfig as ConfigProps
+    return merged as unknown as ConfigProps
   }
 
-  if (userConfig) {
-    // now we will iterate over the userConfig and check for extra fields, missing fields, etc
+  if (added.length > 0) {
+    console.log(
+      `Found ${added.length} missing field(s) in your config.toml: ${added.join(', ')}`
+    )
+    console.log('They were added automatically to your config.toml.')
+    await Bun.write(
+      `${process.cwd()}/config.toml`,
+      Bun.TOML.stringify(merged) as string
+    )
+  }
 
-    const keys = Object.keys(defaultConfig).filter((key) => !(key in userConfig))
-    if (keys.length > 0) {
-      console.log(
-        `Found ${keys.length} missing field(s) in your config.toml: ${keys.join(', ')}`
-      )
-      console.log('It will be added automatically to your config.toml.')
-      const updatedConfig = { ...defaultConfig, ...userConfig }
-      await Bun.write(
-        `${process.cwd()}/config.toml`,
-        Bun.TOML.stringify(updatedConfig) as string
-      )
-      return updatedConfig as ConfigProps
-    }
-
+  {
     // now we just warn if there are extra fields in the userConfig
     const extraKeys = Object.keys(userConfig).filter(
       (key) => !(key in defaultConfig)
@@ -135,5 +165,5 @@ export async function load(): Promise<ConfigProps> {
     }
   }
 
-  return userConfig as ConfigProps
+  return merged as unknown as ConfigProps
 }

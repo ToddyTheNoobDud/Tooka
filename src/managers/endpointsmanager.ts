@@ -1,16 +1,29 @@
 import type pino from 'pino'
 import { infoEndpoint } from '../endpoints/info'
 import { loadTracksEndpoint } from '../endpoints/loadtracks'
+import {
+  destroyPlayerEndpoint,
+  getPlayerEndpoint,
+  listPlayersEndpoint,
+  updatePlayerEndpoint
+} from '../endpoints/players'
+import { updateSessionEndpoint } from '../endpoints/session'
+import { statsEndpoint } from '../endpoints/stats'
 import { VersionEndpoint } from '../endpoints/version'
 
-import type {
-  Endpoint,
-  EndpointContext,
-  HttpMethod
-} from '../shared/endpoints/base'
-import type { ConfigProps } from '../types/config/configmanager.types'
+import type { Endpoint, EndpointContext, HttpMethod } from '../shared/endpoints'
+import type { ConfigProps } from '../types/config'
 
 type RouteHandler = (request: Request) => Response | Promise<Response>
+
+// Voice credentials pass through PATCH bodies; never log the values,
+// only that they were present.
+function redactSecrets(body: string): string {
+  return body.replace(
+    /("(?:token|sessionId)"\s*:\s*")[^"]*(")/g,
+    '$1[redacted]$2'
+  )
+}
 
 /**
  * @description Owns the HTTP endpoints and builds the routes object Bun
@@ -38,7 +51,13 @@ export class EndpointsManager {
     const endpoints: Endpoint[] = [
       infoEndpoint,
       VersionEndpoint,
-      loadTracksEndpoint
+      loadTracksEndpoint,
+      statsEndpoint,
+      listPlayersEndpoint,
+      getPlayerEndpoint,
+      updatePlayerEndpoint,
+      destroyPlayerEndpoint,
+      updateSessionEndpoint
     ]
     const routes: Record<string, Partial<Record<HttpMethod, RouteHandler>>> = {}
     for (const endpoint of endpoints) {
@@ -68,10 +87,29 @@ export class EndpointsManager {
       config: this.config,
       logger: this.logger
     }
+    const url = new URL(request.url)
+    const path = `${url.pathname}${url.search}`
+    const logRequests = this.config.logging.logRequests
+    let rawBody = ''
+    if (logRequests && request.method !== 'GET' && request.method !== 'HEAD') {
+      try {
+        rawBody = await request.clone().text()
+      } catch {
+        rawBody = '<unreadable>'
+      }
+    }
+    if (logRequests) {
+      this.logger.info(
+        `-> ${request.method} ${path}${rawBody ? ` body=${redactSecrets(rawBody)}` : ''}`
+      )
+    }
     try {
-      const handle = await endpoint.handle(request, context)
-      handle.headers.set('Iamtooka', 'true')
-      return handle
+      const response = await endpoint.handle(request, context)
+      response.headers.set('Iamtooka', 'true')
+      if (logRequests) {
+        this.logger.info(`<- ${request.method} ${path} ${response.status}`)
+      }
+      return response
     } catch (error) {
       this.logger.error(
         { error, method: endpoint.method, path: endpoint.path },

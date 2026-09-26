@@ -86,7 +86,11 @@ export function writeNullable(
   return writePrepared(buffer, offset, prepared, original as string)
 }
 
-export function writeLong(buffer: Buffer, offset: number, value: number): number {
+export function writeLong(
+  buffer: Buffer,
+  offset: number,
+  value: number
+): number {
   buffer.writeBigInt64BE(BigInt(Math.trunc(value)), offset)
   return offset + 8
 }

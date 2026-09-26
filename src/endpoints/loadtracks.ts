@@ -1,4 +1,4 @@
-import type { Endpoint } from '../shared/endpoints/base'
+import type { Endpoint } from '../shared/endpoints'
 import { resolveSource } from '../sources/index'
 
 export const loadTracksEndpoint: Endpoint = {
@@ -18,6 +18,17 @@ export const loadTracksEndpoint: Endpoint = {
       config: context.config,
       logger: context.logger
     })
+    const count =
+      result.loadType === 'search'
+        ? result.tracks.length
+        : result.loadType === 'track'
+          ? 1
+          : result.loadType === 'playlist'
+            ? result.tracks.length
+            : 0
+    context.logger.debug(
+      `loadtracks ${identifier.slice(0, 60)} -> ${result.loadType} (${count}).`
+    )
     switch (result.loadType) {
       case 'empty':
         return Response.json({ loadType: 'empty', data: {} })
@@ -34,6 +45,15 @@ export const loadTracksEndpoint: Endpoint = {
         return Response.json({ loadType: 'track', data: result.track })
       case 'search':
         return Response.json({ loadType: 'search', data: result.tracks })
+      case 'playlist':
+        return Response.json({
+          loadType: 'playlist',
+          data: {
+            info: result.info,
+            tracks: result.tracks,
+            pluginInfo: {}
+          }
+        })
     }
   }
 }

@@ -1,11 +1,11 @@
-import type { Endpoint } from '../shared/endpoints/base'
-import type { InfoResponse } from '../types/endpoints/info.types'
+import type { Endpoint } from '../shared/endpoints'
+import type { InfoResponse } from '../types/endpoints'
 
 // will separate this better one day.
 //
 
 // https://www.w3schools.com/js/js_temporal_instant.asp
-// 
+//
 // const instant = Temporal.Now.instant()
 // then for getting the epoch milliseconds: instant.epochMilliseconds
 // This replaces Date.now(), but since this api is too new, im not gonna implement it.

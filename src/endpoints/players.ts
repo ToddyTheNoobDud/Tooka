@@ -1,3 +1,4 @@
+import type pino from 'pino'
 import { applyTrack } from '../players/applyTrack'
 import { Player } from '../players/player'
 import {
@@ -9,6 +10,7 @@ import {
 } from '../players/sessions'
 import type { Endpoint } from '../shared/endpoints'
 import { routeParams } from '../shared/endpoints'
+import type { ConfigProps } from '../types/config'
 import { stopPlayback } from '../voice/playback'
 import { syncPlayerVoice } from '../voice/players'
 import {
@@ -43,6 +45,66 @@ export const getPlayerEndpoint: Endpoint = {
     if ('error' in found) return found.error
     return Response.json(found.player.serialize())
   }
+}
+
+// Volume slider drags send a PATCH per tick, but gain is baked into the
+// ffmpeg graph at spawn: restarting per tick re-resolves the stream and
+// respawns ffmpeg every time. Settle the value first, restart once.
+const VOLUME_RESTART_DEBOUNCE_MS = 250
+
+const pendingVolumeRestart = new WeakMap<
+  Player,
+  { generation: number; timeout: ReturnType<typeof setTimeout> | null }
+>()
+
+function pumpRestartState(player: Player): {
+  generation: number
+  timeout: ReturnType<typeof setTimeout> | null
+} {
+  const existing = pendingVolumeRestart.get(player)
+  if (existing) return existing
+  const fresh: {
+    generation: number
+    timeout: ReturnType<typeof setTimeout> | null
+  } = { generation: 0, timeout: null }
+  pendingVolumeRestart.set(player, fresh)
+  return fresh
+}
+
+// Any inline pump lifecycle change (seek, track swap, pause, disconnect)
+// supersedes a pending volume restart: the resulting pump already runs
+// with the current gain, so the queued restart would only add a gap.
+function cancelPendingVolumeRestart(player: Player): void {
+  const state = pumpRestartState(player)
+  state.generation += 1
+  if (state.timeout) {
+    clearTimeout(state.timeout)
+    state.timeout = null
+  }
+}
+
+function scheduleVolumeRestart(
+  player: Player,
+  sessionId: string,
+  guildId: string,
+  config: ConfigProps,
+  logger: pino.Logger
+): void {
+  const state = pumpRestartState(player)
+  if (state.timeout) clearTimeout(state.timeout)
+  const generation = state.generation
+  state.timeout = setTimeout(() => {
+    state.timeout = null
+    if (pumpRestartState(player).generation !== generation) return
+    // Player destroyed or replaced while settling: leave it alone.
+    const owner = findSession(sessionId)
+    if (!owner || owner.players.get(guildId) !== player) return
+    stopPlayback(player)
+    syncPlayerVoice(owner, player, config, logger).catch((error: unknown) => {
+      logger.warn({ err: error }, `Player ${guildId} volume restart failed.`)
+    })
+  }, VOLUME_RESTART_DEBOUNCE_MS)
+  state.timeout.unref?.()
 }
 
 export const updatePlayerEndpoint: Endpoint = {
@@ -150,7 +212,14 @@ export const updatePlayerEndpoint: Endpoint = {
       )
       return trackError
     }
+    // Gain is baked into the ffmpeg filter graph at spawn, so a volume
+    // change needs a pump restart. Unlike a seek it is debounced: slider
+    // drags send a PATCH per tick and must not respawn ffmpeg per tick.
+    const volumeChanged =
+      body.volume !== undefined && body.volume !== player.volume
     if (body.volume !== undefined) player.volume = body.volume
+    const pausedChanged =
+      body.paused !== undefined && body.paused !== player.paused
     if (body.paused !== undefined) player.paused = body.paused
     // A seek restarts the transcoder at the new offset. Without this the
     // pump keeps emitting the old offset while position claims the new one,
@@ -161,6 +230,8 @@ export const updatePlayerEndpoint: Endpoint = {
       Math.trunc(body.position) !== player.position
     if (body.position !== undefined)
       player.setPosition(Math.trunc(body.position))
+    const trackChanged =
+      previousTrack?.encoded !== player.track?.encoded
     if (sought) stopPlayback(player)
     if (body.endTime !== undefined) player.endTime = body.endTime
     if (body.filters !== undefined) player.filters = body.filters
@@ -186,6 +257,23 @@ export const updatePlayerEndpoint: Endpoint = {
       } else {
         player.voice = voice
       }
+    }
+
+    // A volume-only change while the pump is alive settles first: the
+    // debounced restart picks up the final gain in one respawn. Any inline
+    // lifecycle change above already restarted (or stopped) the pump with
+    // the current gain, so scheduling would only add a second gap.
+    const pumpTurnedOver =
+      sought || trackChanged || pausedChanged || !player.connection
+    if (pumpTurnedOver) cancelPendingVolumeRestart(player)
+    if (volumeChanged && !pumpTurnedOver && player.track && !player.paused) {
+      scheduleVolumeRestart(
+        player,
+        sessionId,
+        guildId,
+        context.config,
+        context.logger
+      )
     }
 
     await syncPlayerVoice(session, player, context.config, context.logger)

@@ -1,5 +1,7 @@
 import { describe, expect, test } from 'bun:test'
+import type pino from 'pino'
 import {
+  buildFfmpegArgs,
   createOggState,
   FfmpegProcess,
   pushOggBytes
@@ -87,5 +89,27 @@ describe('FfmpegProcess', () => {
 
     expect(killed).toBe(true)
     expect(drained).toBe(true)
+  })
+})
+
+describe('buildFfmpegArgs volume', () => {
+  const logger = null as unknown as pino.Logger
+
+  test('adds a volume filter only when gain differs from 1', () => {
+    const halved = buildFfmpegArgs('https://example.com/a', {
+      logger,
+      volume: 0.55
+    })
+    expect(halved).toContain('-filter:a')
+    expect(halved).toContain('volume=0.55')
+
+    const unity = buildFfmpegArgs('https://example.com/a', {
+      logger,
+      volume: 1
+    })
+    expect(unity).not.toContain('-filter:a')
+
+    const unset = buildFfmpegArgs('https://example.com/a', { logger })
+    expect(unset).not.toContain('-filter:a')
   })
 })

@@ -185,7 +185,8 @@ export async function syncPlayback(
       for await (const frame of ffmpegOpusFrames(stream.url, {
         logger,
         bitrate: config.audio.bitrate,
-        startAtMs: player.position
+        startAtMs: player.position,
+        volume: player.volume / 100
       })) {
         if (stopped || player.playback?.queue !== queue) break
         queue.push(frame)

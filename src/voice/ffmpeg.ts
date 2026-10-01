@@ -21,6 +21,7 @@ export interface FfmpegOptions {
   headers?: Record<string, string>
   bitrate?: string
   startAtMs?: number
+  volume?: number
 }
 
 interface OggState {
@@ -127,11 +128,8 @@ export class FfmpegProcess implements AsyncDisposable {
   }
 }
 
-export async function* ffmpegOpusFrames(
-  url: string,
-  options: FfmpegOptions
-): AsyncGenerator<Uint8Array> {
-  const binary = ensureFfmpeg()
+// Pure arg builder, exported for unit tests (no spawn involved).
+export function buildFfmpegArgs(url: string, options: FfmpegOptions): string[] {
   // -re paces output to real time: without it ffmpeg transcodes as fast as
   // possible, outruns the 20ms tick, and the bounded queue drops everything.
   const args = ['-v', 'error', '-nostdin', '-re']
@@ -157,7 +155,14 @@ export async function* ffmpegOpusFrames(
     '-ar',
     '48000',
     '-ac',
-    '2',
+    '2'
+  )
+  // Volume is baked in at transcode time (https://ffmpeg.org/ffmpeg-filters.html#volume):
+  // 1.0 passes audio through, so the filter is only added when gain differs.
+  if (options.volume !== undefined && options.volume !== 1) {
+    args.push('-filter:a', `volume=${options.volume}`)
+  }
+  args.push(
     '-frame_duration',
     '20',
     '-f',
@@ -170,6 +175,15 @@ export async function* ffmpegOpusFrames(
       .join('')
     args.push('-headers', lines)
   }
+  return args
+}
+
+export async function* ffmpegOpusFrames(
+  url: string,
+  options: FfmpegOptions
+): AsyncGenerator<Uint8Array> {
+  const binary = ensureFfmpeg()
+  const args = buildFfmpegArgs(url, options)
   const child = Bun.spawn([binary, ...args], {
     stdout: 'pipe',
     stderr: 'pipe',

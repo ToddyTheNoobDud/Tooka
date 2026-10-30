@@ -11,33 +11,33 @@ import type { InfoResponse } from '../types/endpoints'
 // This replaces Date.now(), but since this api is too new, im not gonna implement it.
 
 function buildJson(): InfoResponse {
-  return {
-    version: {
-      semver: '1.0.0',
-      major: 1,
-      minor: 0,
-      patch: 0,
-      preRelease: '0',
-      build: 'tooka'
-    },
-    git: {
-      branch: 'dev',
-      commit: '50f819b',
-      commitTime: Date.now()
-    },
-    bun: process.versions.bun,
-    isTooka: true,
-    sourceManagers: [],
-    filters: [],
-    plugins: []
-  }
+	return {
+		version: {
+			semver: '1.0.0',
+			major: 1,
+			minor: 0,
+			patch: 0,
+			preRelease: '0',
+			build: 'tooka'
+		},
+		git: {
+			branch: 'dev',
+			commit: '50f819b',
+			commitTime: Date.now()
+		},
+		bun: process.versions.bun,
+		isTooka: true,
+		sourceManagers: [],
+		filters: [],
+		plugins: []
+	}
 }
 
 export const infoEndpoint: Endpoint = {
-  path: '/v4/info',
-  method: 'GET',
-  description: 'Returns information about the server',
-  handle: () => {
-    return Response.json(buildJson())
-  }
+	path: '/v4/info',
+	method: 'GET',
+	description: 'Returns information about the server',
+	handle: () => {
+		return Response.json(buildJson())
+	}
 }

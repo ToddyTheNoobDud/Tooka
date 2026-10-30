@@ -3,10 +3,11 @@ import type { Source, StreamSource } from '../shared/sources'
 import type { Track } from '../types/utils'
 import { httpSource } from './http'
 import { soundcloudSource } from './soundcloud'
+import { YoutubeSource } from './youtube'
 
 // Every source the node can load from. To add one: write the file, export the
 // source object from it, then list it here.
-export const sources: Source[] = [soundcloudSource, httpSource]
+export const sources: Source[] = [soundcloudSource, YoutubeSource, httpSource]
 
 export async function loadSources(context: Context): Promise<void> {
 	// Concurrent: source loads are independent, so a slow one never blocks

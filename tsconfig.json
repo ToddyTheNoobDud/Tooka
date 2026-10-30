@@ -22,5 +22,6 @@
 		"noUnusedLocals": false,
 		"noUnusedParameters": false,
 		"noPropertyAccessFromIndexSignature": false
-	}
+	},
+	"include": ["global.d.ts", "src/**/*.ts", "tests/**/*.ts"]
 }

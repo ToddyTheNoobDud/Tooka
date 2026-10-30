@@ -31,5 +31,19 @@ export interface ConfigProps {
 	sources: {
 		httpTimeoutMs: number
 		soundcloud: { enable: boolean; clientId?: string; searchLimit: number }
+		youtube: {
+			enable: boolean
+			searchingClients: Array<string>
+			resolvingClients: Array<string>
+			playbackClients: Array<string>
+			lazyLoadClients: boolean
+		}
+		youtubemusic: {
+			enable: boolean
+			searchingClients: Array<string>
+			resolvingClients: Array<string>
+			playbackClients: Array<string>
+			lazyLoadClients: boolean
+		}
 	}
 }

@@ -39,3 +39,17 @@ httpTimeoutMs = 15000 # Timeout for all source http requests (search, resolve, m
 enable = true # Set to false to disable the SoundCloud source
 clientId = "" # SoundCloud client id, if not set will be scraped.
 searchLimit = 10 # How many tracks a SoundCloud search returns.
+
+[sources.youtube]
+enable = true
+searchingClients = ['ANDROID']
+resolvingClients = []
+playbackClients = []
+lazyLoadClients = true
+
+[sources.youtubemusic]
+enable = true
+searchingClients = ['']
+resolvingClients = []
+playbackClients = []
+lazyLoadClients = true
